@@ -1,42 +1,78 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';  // Importa o componente DateTimePicker
 import { addDoc, collection } from 'firebase/firestore';
-import { db } from '../firebase';  // Certifique-se de que o Firestore está configurado corretamente
-import { Picker } from '@react-native-picker/picker';  // Certifique-se de usar este Picker
+import { db, auth } from '../firebase';  // Certifique-se de que está configurado corretamente
+import { Picker } from '@react-native-picker/picker';  // Importa o Picker para os horários
 
 export default function ActivityScreen({ navigation }) {
   const [activity, setActivity] = useState('Realização de orçamento');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:30');
+  const [date, setDate] = useState(new Date());  // Estado para armazenar a data
+  const [showDatePicker, setShowDatePicker] = useState(false);  // Controle do DatePicker para mostrar/esconder
+
+  // Função para converter string de horário para objeto Date
+  const convertTimeToDate = (time) => {
+    const [hours, minutes] = time.split(':');
+    const newDate = new Date(date);
+    newDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    return newDate;
+  };
 
   const handleSaveActivity = async () => {
-    if (startTime >= endTime) {
+    const startDateTime = convertTimeToDate(startTime);
+    const endDateTime = convertTimeToDate(endTime);
+
+    if (endDateTime <= startDateTime) {
       Alert.alert('Erro', 'O horário de término deve ser maior que o horário de início.');
       return;
     }
 
-    const currentTime = new Date().toLocaleString();
+    const user = auth.currentUser;
 
     try {
-      console.log("Tentando salvar atividade..."); // Log para ver quando tenta salvar
       await addDoc(collection(db, 'activities'), {
+        userId: user.uid,
         activity,
         description,
-        startTime,
-        endTime,
-        savedAt: currentTime,
+        startTime: startDateTime.toString(),   // Salvando o horário de início como string
+        endTime: endDateTime.toString(),       // Salvando o horário de término como string
+        savedAt: new Date().toString(),        // Salvando a data/hora atual como string
+        date: date.toLocaleDateString(),       // Salvando a data da atividade
       });
-      console.log("Atividade salva com sucesso!"); // Log de sucesso
       Alert.alert('Sucesso', 'Atividade registrada com sucesso!');
     } catch (error) {
-      console.error('Erro ao salvar atividade:', error); // Log detalhado do erro
-      Alert.alert('Erro', `Erro ao salvar atividade: ${error.message}`);
+      Alert.alert('Erro ao salvar atividade', error.message);
     }
+  };
+
+  // Função para lidar com a mudança da data no DatePicker
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(false);  // Esconder o DatePicker após selecionar
+    setDate(currentDate);  // Define a nova data
   };
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <Text>Data da Atividade:</Text>
+      <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+        <Text style={{ borderWidth: 1, padding: 10, marginVertical: 10 }}>
+          {date.toLocaleDateString()}
+        </Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
+
       <Text>Atividade realizada:</Text>
       <Picker
         selectedValue={activity}
