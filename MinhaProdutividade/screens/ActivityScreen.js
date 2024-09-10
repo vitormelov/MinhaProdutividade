@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';  // Importa o componente DateTimePicker
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { addDoc, collection } from 'firebase/firestore';
-import { db, auth } from '../firebase';  // Certifique-se de que está configurado corretamente
-import { Picker } from '@react-native-picker/picker';  // Importa o Picker para os horários
+import { db, auth } from '../firebase';
+import { Picker } from '@react-native-picker/picker';
 
 export default function ActivityScreen({ navigation }) {
-  const [activity, setActivity] = useState('Realização de orçamento');
-  const [description, setDescription] = useState('');
+  const [activity, setActivity] = useState('Elaboração de orçamento');  // Definimos um valor inicial
+  const [description, setDescription] = useState('');  // A descrição será sempre obrigatória
   const [startTime, setStartTime] = useState('08:00');
-  const [endTime, setEndTime] = useState('08:30');
-  const [date, setDate] = useState(new Date());  // Estado para armazenar a data
-  const [showDatePicker, setShowDatePicker] = useState(false);  // Controle do DatePicker para mostrar/esconder
+  const [endTime, setEndTime] = useState('08:15');
+  const [date, setDate] = useState(new Date());  
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Função para converter string de horário para objeto Date
   const convertTimeToDate = (time) => {
@@ -35,12 +35,12 @@ export default function ActivityScreen({ navigation }) {
     try {
       await addDoc(collection(db, 'activities'), {
         userId: user.uid,
-        activity,
-        description,
-        startTime: startDateTime.toString(),   // Salvando o horário de início como string
-        endTime: endDateTime.toString(),       // Salvando o horário de término como string
-        savedAt: new Date().toString(),        // Salvando a data/hora atual como string
-        date: date.toLocaleDateString(),       // Salvando a data da atividade
+        activity: activity === 'Outros' ? `Outros ${description}` : activity,  // Se for "Outros", concatenar com a descrição
+        description,  // Sempre salvar a descrição
+        startTime: startDateTime.toString(),
+        endTime: endDateTime.toString(),
+        savedAt: new Date().toString(),
+        date: date.toLocaleDateString(),
       });
       Alert.alert('Sucesso', 'Atividade registrada com sucesso!');
     } catch (error) {
@@ -48,11 +48,10 @@ export default function ActivityScreen({ navigation }) {
     }
   };
 
-  // Função para lidar com a mudança da data no DatePicker
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
-    setShowDatePicker(false);  // Esconder o DatePicker após selecionar
-    setDate(currentDate);  // Define a nova data
+    setShowDatePicker(false);
+    setDate(currentDate);
   };
 
   return (
@@ -78,12 +77,19 @@ export default function ActivityScreen({ navigation }) {
         selectedValue={activity}
         onValueChange={(itemValue) => setActivity(itemValue)}
       >
-        <Picker.Item label="Realização de orçamento" value="Realização de orçamento" />
-        <Picker.Item label="Visita a obra" value="Visita a obra" />
+        <Picker.Item label="Elaboração de orçamento" value="Elaboração de orçamento" />
+        <Picker.Item label="Elaboração de cronograma" value="Elaboração de cronograma" />
+        <Picker.Item label="Elaboração de projetos" value="Elaboração de projetos" />
+        <Picker.Item label="Elaboração de relatório semanal" value="Elaboração de relatório semanal" />
+        <Picker.Item label="Elaboração de RMR" value="Elaboração de RMR" />
+        <Picker.Item label="Implantação de saldo no sistema" value="Implantação de saldo no sistema" />
         <Picker.Item label="Reunião" value="Reunião" />
+        <Picker.Item label="Solicitação de insumo no sistema" value="Solicitação de insumo no sistema" />
+        <Picker.Item label="Visita em obra" value="Visita em obra" />
+        <Picker.Item label="Outros" value="Outros" />
       </Picker>
 
-      <Text>Descrição:</Text>
+      <Text>Descrição da Atividade:</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
@@ -112,12 +118,14 @@ export default function ActivityScreen({ navigation }) {
   );
 }
 
-// Função para gerar opções de horário de 30 em 30 minutos
+// Função para gerar opções de horário de 15 em 15 minutos
 const generateTimeOptions = () => {
   const times = [];
   for (let i = 8; i <= 18; i++) {
     times.push(<Picker.Item key={`${i}:00`} label={`${i}:00`} value={`${i}:00`} />);
+    times.push(<Picker.Item key={`${i}:15`} label={`${i}:15`} value={`${i}:15`} />);
     times.push(<Picker.Item key={`${i}:30`} label={`${i}:30`} value={`${i}:30`} />);
+    times.push(<Picker.Item key={`${i}:45`} label={`${i}:45`} value={`${i}:45`} />);
   }
   return times;
 };
