@@ -19,21 +19,34 @@ export default function AdminDashboard({ navigation }) {
     fetchEmployees();
   }, []);
 
+  // Função para organizar os funcionários por setor
+  const renderSector = (sector) => {
+    const sectorEmployees = employees.filter((employee) => employee.sector === sector);
+
+    return (
+      <View>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>{sector}:</Text>
+        <FlatList
+          data={sectorEmployees}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => navigation.navigate('EmployeeActivities', { userId: item.userId })}>
+              <View style={{ marginBottom: 20, padding: 10, borderWidth: 1, borderRadius: 5 }}>
+                <Text>Nome: {item.name}</Text>
+                <Text>Email: {item.email}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+    );
+  };
+
   return (
     <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Funcionários Cadastrados:</Text>
-      <FlatList
-        data={employees}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigation.navigate('EmployeeActivities', { userId: item.userId })}>
-            <View style={{ marginBottom: 20, padding: 10, borderWidth: 1, borderRadius: 5 }}>
-              <Text>Nome: {item.name}</Text>
-              <Text>Email: {item.email}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+      {renderSector('Área técnica')}
+      {renderSector('Marketing')}
+      {renderSector('Financeiro')}
     </View>
   );
 }
