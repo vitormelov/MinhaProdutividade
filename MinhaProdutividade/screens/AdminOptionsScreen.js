@@ -6,13 +6,17 @@ export default function AdminOptionsScreen({ navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Opções de Administração</Text>
 
-      {/* Opção para ir ao AdminDashboard */}
       <Button
         title="Ir para o Dashboard"
         onPress={() => navigation.navigate('AdminDashboard')}
       />
 
-      {/* Outras opções podem ser adicionadas aqui futuramente */}
+      <Button
+        title="Criar Setores"
+        onPress={() => navigation.navigate('SectorCreationScreen')}
+        style={styles.button}
+      />
+
     </View>
   );
 }
@@ -29,5 +33,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+  button: {
+    marginTop: 20,
   },
 });

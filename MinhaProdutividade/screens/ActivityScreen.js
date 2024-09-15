@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addDoc, collection } from 'firebase/firestore';
-import { db, auth } from '../firebase';  // Certifique-se de que o Firestore e o Auth estão importados corretamente
+import { db, auth } from '../firebase';
 import { Picker } from '@react-native-picker/picker';
 
 export default function ActivityScreen({ navigation }) {
-  const [activity, setActivity] = useState('Elaboração de orçamento');
-  const [description, setDescription] = useState('');
+  const [activity, setActivity] = useState('Elaboração de orçamento');  // Definimos um valor inicial
+  const [description, setDescription] = useState('');  // A descrição será sempre obrigatória
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:15');
   const [date, setDate] = useState(new Date());
@@ -21,13 +21,26 @@ export default function ActivityScreen({ navigation }) {
     return newDate;
   };
 
+  // Verificação de autenticação ao carregar a tela
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Usuário não autenticado', 'Por favor, faça o login novamente.');
+        navigation.navigate('Login');  // Redireciona o usuário para a tela de login se não estiver autenticado
+      }
+    };
+
+    checkAuth();  // Chama a verificação quando o componente monta
+  }, [navigation]);
+
   const handleSaveActivity = async () => {
-    // Verificar se o usuário está autenticado
     const user = auth.currentUser;
 
+    // Verificar se o usuário está autenticado
     if (!user) {
       Alert.alert('Erro', 'Usuário não autenticado. Por favor, faça login novamente.');
-      navigation.navigate('Login');  // Redirecionar para a tela de login
+      navigation.navigate('Login');  // Redireciona o usuário para a tela de login
       return;
     }
 
@@ -40,15 +53,14 @@ export default function ActivityScreen({ navigation }) {
     }
 
     try {
-      // Salvar a atividade no Firestore
       await addDoc(collection(db, 'activities'), {
-        userId: user.uid,  // Certificar-se de que o UID do usuário é armazenado
-        activity,
-        description,
+        userId: user.uid,
+        activity: activity === 'Outros' ? `Outros ${description}` : activity,  // Se for "Outros", concatenar com a descrição
+        description,  // Sempre salvar a descrição
         startTime: startDateTime.toString(),
         endTime: endDateTime.toString(),
         savedAt: new Date().toString(),
-        date: date.toLocaleDateString(),  // Armazenar a data da atividade
+        date: date.toLocaleDateString(),
       });
       Alert.alert('Sucesso', 'Atividade registrada com sucesso!');
     } catch (error) {
@@ -59,7 +71,7 @@ export default function ActivityScreen({ navigation }) {
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
     setShowDatePicker(false);
-    setDate(currentDate);  // Define a nova data
+    setDate(currentDate);
   };
 
   return (
@@ -97,7 +109,7 @@ export default function ActivityScreen({ navigation }) {
         <Picker.Item label="Outros" value="Outros" />
       </Picker>
 
-      <Text>Descrição:</Text>
+      <Text>Descrição da Atividade:</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
