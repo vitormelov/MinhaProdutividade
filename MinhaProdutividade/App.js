@@ -10,6 +10,7 @@ import AdminDashboard from './screens/AdminDashboard';
 import EmployeeActivitiesScreen from './screens/EmployeeActivitiesScreen';
 import AdminOptionsScreen from './screens/AdminOptionsScreen';  // Nova tela de opções
 import SectorCreationScreen from './screens/SectorCreationScreen';  // Importar a nova tela
+import ActivitiesCreationScreen from './screens/ActivitiesCreationScreen';  // Importar a nova tela
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="EmployeeActivities" component={EmployeeActivitiesScreen} />
         <Stack.Screen name="SectorCreationScreen" component={SectorCreationScreen} />  
+        <Stack.Screen name="ActivitiesCreationScreen" component={ActivitiesCreationScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

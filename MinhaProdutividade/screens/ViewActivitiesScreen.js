@@ -1,62 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, TouchableOpacity } from 'react-native';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { View, Text, FlatList, Alert, TouchableOpacity } from 'react-native';
+import { getDocs, query, collection, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import DateTimePicker from '@react-native-community/datetimepicker';  // Importar o DateTimePicker
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-export default function ViewActivitiesScreen({ navigation }) {
+export default function ViewActivitiesScreen() {
   const [activities, setActivities] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());  // Estado para a data selecionada
-  const [showDatePicker, setShowDatePicker] = useState(false);  // Estado para controlar a exibição do DatePicker
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  useEffect(() => {
-    // Função para buscar as atividades do usuário logado para a data selecionada
-    const fetchActivities = async () => {
+  // Função para buscar atividades por data
+  const fetchUserActivities = async (date) => {
+    try {
       const user = auth.currentUser;
-      if (user) {
-        const formattedDate = selectedDate.toLocaleDateString();  // Formatar a data selecionada
-        const q = query(
-          collection(db, 'activities'),
-          where('userId', '==', user.uid),
-          where('date', '==', formattedDate)  // Filtrar pela data selecionada
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedActivities = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setActivities(fetchedActivities);
+      if (!user) {
+        Alert.alert('Erro', 'Usuário não autenticado.');
+        return;
       }
-    };
 
-    fetchActivities();
-  }, [selectedDate]);  // Refetch as atividades quando a data selecionada mudar
-
-  // Função para formatar a hora
-  const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      const formattedDate = date.toLocaleDateString();
+      const q = query(collection(db, 'user_activities'), where('userId', '==', user.uid), where('date', '==', formattedDate));
+      const querySnapshot = await getDocs(q);
+      const fetchedActivities = querySnapshot.docs.map(doc => doc.data());
+      setActivities(fetchedActivities);
+    } catch (error) {
+      Alert.alert('Erro ao buscar atividades', error.message);
+    }
   };
 
-  // Função para calcular a duração entre o horário de início e término
-  const calculateDuration = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const durationInMinutes = (endDate - startDate) / 1000 / 60;  // Duração em minutos
+  useEffect(() => {
+    fetchUserActivities(selectedDate);
+  }, [selectedDate]);
 
-    const hours = Math.floor(durationInMinutes / 60);
-    const minutes = durationInMinutes % 60;
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(false);
+    setSelectedDate(currentDate);
+  };
 
-    return `${hours > 0 ? `${hours}h` : ''} ${minutes}min`.trim();  // Formato: "xh y min"
+  // Função para formatar o horário (HH:MM)
+  const formatTime = (time) => {
+    const date = new Date(time);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Função para calcular a duração (em horas e minutos) entre início e término
+  const calculateDuration = (startTime, endTime) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end - start;
+    const diffMins = Math.floor((diffMs / 1000) / 60);
+    const hours = Math.floor(diffMins / 60);
+    const minutes = diffMins % 60;
+    return `${hours}h ${minutes}m`;
   };
 
   return (
     <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Selecione a Data:</Text>
-      
-      {/* Botão para mostrar o DatePicker */}
       <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-        <Text style={{ borderWidth: 1, padding: 10, marginVertical: 10 }}>
+        <Text style={{ borderWidth: 1, padding: 10, marginBottom: 20 }}>
           {selectedDate.toLocaleDateString()}
         </Text>
       </TouchableOpacity>
@@ -66,21 +68,15 @@ export default function ViewActivitiesScreen({ navigation }) {
           value={selectedDate}
           mode="date"
           display="default"
-          onChange={(event, date) => {
-            setShowDatePicker(false);
-            if (date) {
-              setSelectedDate(date);  // Atualiza a data selecionada
-            }
-          }}
+          onChange={handleDateChange}
         />
       )}
 
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Atividades para {selectedDate.toLocaleDateString()}:</Text>
       <FlatList
         data={activities}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={{ marginBottom: 20, padding: 10, borderWidth: 1, borderRadius: 5 }}>
+          <View style={{ padding: 10, borderBottomWidth: 1 }}>
             <Text>Atividade: {item.activity}</Text>  
             <Text>Descrição: {item.description}</Text>  
             <Text>Início: {formatTime(item.startTime)}</Text>  

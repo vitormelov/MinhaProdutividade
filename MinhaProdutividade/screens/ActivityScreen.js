@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Picker } from '@react-native-picker/picker';
 
 export default function ActivityScreen({ navigation }) {
-  const [activity, setActivity] = useState('Elaboração de orçamento');  // Definimos um valor inicial
-  const [description, setDescription] = useState('');  // A descrição será sempre obrigatória
+  const [activity, setActivity] = useState('');
+  const [activities, setActivities] = useState([]);
+  const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:15');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [sector, setSector] = useState('');
 
   // Função para converter string de horário para objeto Date
   const convertTimeToDate = (time) => {
@@ -21,23 +23,51 @@ export default function ActivityScreen({ navigation }) {
     return newDate;
   };
 
-  // Verificação de autenticação ao carregar a tela
+  // Função para buscar atividades associadas ao setor do usuário
+  const fetchActivitiesForSector = async (userSector) => {
+    try {
+      const activitiesQuery = query(collection(db, 'activities'), where('sector', '==', userSector));
+      const querySnapshot = await getDocs(activitiesQuery);
+      const fetchedActivities = querySnapshot.docs.map(doc => doc.data().name);
+      setActivities(fetchedActivities);
+      setActivity(fetchedActivities[0] || ''); // Define a primeira atividade como padrão
+    } catch (error) {
+      Alert.alert('Erro ao buscar atividades', error.message);
+    }
+  };
+
+  // Verificar autenticação e buscar setor e atividades ao carregar a tela
   useEffect(() => {
-    const checkAuth = () => {
-      const user = auth.currentUser;
-      if (!user) {
-        Alert.alert('Usuário não autenticado', 'Por favor, faça o login novamente.');
-        navigation.navigate('Login');  // Redireciona o usuário para a tela de login se não estiver autenticado
+    const fetchUserSectorAndActivities = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          Alert.alert('Usuário não autenticado', 'Por favor, faça o login novamente.');
+          navigation.navigate('Login');  // Redireciona o usuário para a tela de login
+          return;
+        }
+
+        // Supondo que o setor do usuário esteja salvo na coleção 'users'
+        const userSnapshot = await getDocs(query(collection(db, 'users'), where('userId', '==', user.uid)));
+        if (!userSnapshot.empty) {
+          const userData = userSnapshot.docs[0].data();
+          const userSector = userData.sector;
+
+          setSector(userSector);
+          fetchActivitiesForSector(userSector);  // Busca atividades para o setor do usuário
+        } else {
+          Alert.alert('Erro', 'Setor do usuário não encontrado.');
+        }
+      } catch (error) {
+        Alert.alert('Erro ao buscar dados do usuário', error.message);
       }
     };
 
-    checkAuth();  // Chama a verificação quando o componente monta
+    fetchUserSectorAndActivities();
   }, [navigation]);
 
   const handleSaveActivity = async () => {
     const user = auth.currentUser;
-
-    // Verificar se o usuário está autenticado
     if (!user) {
       Alert.alert('Erro', 'Usuário não autenticado. Por favor, faça login novamente.');
       navigation.navigate('Login');  // Redireciona o usuário para a tela de login
@@ -53,14 +83,15 @@ export default function ActivityScreen({ navigation }) {
     }
 
     try {
-      await addDoc(collection(db, 'activities'), {
+      await addDoc(collection(db, 'user_activities'), {
         userId: user.uid,
-        activity: activity === 'Outros' ? `Outros ${description}` : activity,  // Se for "Outros", concatenar com a descrição
-        description,  // Sempre salvar a descrição
+        activity: activity === 'Outros' ? `Outros ${description}` : activity,
+        description,
         startTime: startDateTime.toString(),
         endTime: endDateTime.toString(),
         savedAt: new Date().toString(),
         date: date.toLocaleDateString(),
+        sector: sector,  // Salvar o setor do usuário
       });
       Alert.alert('Sucesso', 'Atividade registrada com sucesso!');
     } catch (error) {
@@ -97,16 +128,9 @@ export default function ActivityScreen({ navigation }) {
         selectedValue={activity}
         onValueChange={(itemValue) => setActivity(itemValue)}
       >
-        <Picker.Item label="Elaboração de orçamento" value="Elaboração de orçamento" />
-        <Picker.Item label="Elaboração de cronograma" value="Elaboração de cronograma" />
-        <Picker.Item label="Elaboração de projetos" value="Elaboração de projetos" />
-        <Picker.Item label="Elaboração de relatório semanal" value="Elaboração de relatório semanal" />
-        <Picker.Item label="Elaboração de RMR" value="Elaboração de RMR" />
-        <Picker.Item label="Implantação de saldo no sistema" value="Implantação de saldo no sistema" />
-        <Picker.Item label="Reunião" value="Reunião" />
-        <Picker.Item label="Solicitação de insumo no sistema" value="Solicitação de insumo no sistema" />
-        <Picker.Item label="Visita em obra" value="Visita em obra" />
-        <Picker.Item label="Outros" value="Outros" />
+        {activities.map((activityName) => (
+          <Picker.Item key={activityName} label={activityName} value={activityName} />
+        ))}
       </Picker>
 
       <Text>Descrição da Atividade:</Text>
