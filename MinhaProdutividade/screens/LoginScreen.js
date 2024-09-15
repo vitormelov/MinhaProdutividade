@@ -1,53 +1,106 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';  // Certifique-se de que o Firebase está corretamente configurado
+import { View, Text, TextInput, Button, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        navigation.navigate('Activity');  // Redireciona para a tela de atividades após o login
-      })
-      .catch((error) => {
-        Alert.alert('Erro ao fazer login', error.message);
-      });
+    // Função de login
+    console.log('Login efetuado:', email);
+    navigation.navigate('Activity');
+  };
+
+  const handleAdminLogin = () => {
+    // Navegar para a tela de login do administrador
+    navigation.navigate('AdminLogin');
   };
 
   return (
-    <View style={{ padding: 20 }}>
+    <View style={styles.container}>
+      <Image
+        source={require('../assets/logo.png')}  // Caminho atualizado para o logo.png
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
+      <Text style={styles.title}>Bem-vindo!</Text>
+
       <Text>Email:</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
         placeholder="Digite seu email"
         keyboardType="email-address"
-        style={{ borderWidth: 1, padding: 10, marginVertical: 10 }}
+        style={styles.input}
       />
+
       <Text>Senha:</Text>
       <TextInput
         value={password}
         onChangeText={setPassword}
         placeholder="Digite sua senha"
         secureTextEntry
-        style={{ borderWidth: 1, padding: 10, marginVertical: 10 }}
+        style={styles.input}
       />
+
       <Button title="Entrar" onPress={handleLogin} />
 
-      <Button
-        title="Registrar-se"
-        onPress={() => navigation.navigate('Register')}
-        style={{ marginTop: 10 }}
-      />
+      <Text style={styles.registerText}>
+        Não tem uma conta? <Text onPress={() => navigation.navigate('Register')} style={styles.registerLink}>Registre-se</Text>
+      </Text>
 
-      <Button
-        title="Administração"
-        onPress={() => navigation.navigate('AdminLogin')}
-        style={{ marginTop: 10 }}
-      />
+      <TouchableOpacity onPress={handleAdminLogin} style={styles.adminButton}>
+        <Text style={styles.adminButtonText}>Administração</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',  // Centraliza verticalmente
+    alignItems: 'center',  // Centraliza horizontalmente
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  logo: {
+    width: 200,  // Largura do logo
+    height: 200,  // Altura do logo
+    marginBottom: 20,  // Espaçamento entre o logo e o título
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 15,
+    borderRadius: 5,
+  },
+  registerText: {
+    marginTop: 20,
+    fontSize: 14,
+    color: '#333',
+  },
+  registerLink: {
+    color: '#1e90ff',
+    fontWeight: 'bold',
+  },
+  adminButton: {
+    marginTop: 30,
+    padding: 10,
+    backgroundColor: '#ff6347',
+    borderRadius: 5,
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+});

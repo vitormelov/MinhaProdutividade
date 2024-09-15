@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addDoc, collection } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../firebase';  // Certifique-se de que o Firestore e o Auth estão importados corretamente
 import { Picker } from '@react-native-picker/picker';
 
 export default function ActivityScreen({ navigation }) {
-  const [activity, setActivity] = useState('Elaboração de orçamento');  // Definimos um valor inicial
-  const [description, setDescription] = useState('');  // A descrição será sempre obrigatória
+  const [activity, setActivity] = useState('Elaboração de orçamento');
+  const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:15');
-  const [date, setDate] = useState(new Date());  
+  const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Função para converter string de horário para objeto Date
@@ -22,6 +22,15 @@ export default function ActivityScreen({ navigation }) {
   };
 
   const handleSaveActivity = async () => {
+    // Verificar se o usuário está autenticado
+    const user = auth.currentUser;
+
+    if (!user) {
+      Alert.alert('Erro', 'Usuário não autenticado. Por favor, faça login novamente.');
+      navigation.navigate('Login');  // Redirecionar para a tela de login
+      return;
+    }
+
     const startDateTime = convertTimeToDate(startTime);
     const endDateTime = convertTimeToDate(endTime);
 
@@ -30,17 +39,16 @@ export default function ActivityScreen({ navigation }) {
       return;
     }
 
-    const user = auth.currentUser;
-
     try {
+      // Salvar a atividade no Firestore
       await addDoc(collection(db, 'activities'), {
-        userId: user.uid,
-        activity: activity === 'Outros' ? `Outros ${description}` : activity,  // Se for "Outros", concatenar com a descrição
-        description,  // Sempre salvar a descrição
+        userId: user.uid,  // Certificar-se de que o UID do usuário é armazenado
+        activity,
+        description,
         startTime: startDateTime.toString(),
         endTime: endDateTime.toString(),
         savedAt: new Date().toString(),
-        date: date.toLocaleDateString(),
+        date: date.toLocaleDateString(),  // Armazenar a data da atividade
       });
       Alert.alert('Sucesso', 'Atividade registrada com sucesso!');
     } catch (error) {
@@ -51,7 +59,7 @@ export default function ActivityScreen({ navigation }) {
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
     setShowDatePicker(false);
-    setDate(currentDate);
+    setDate(currentDate);  // Define a nova data
   };
 
   return (
@@ -89,7 +97,7 @@ export default function ActivityScreen({ navigation }) {
         <Picker.Item label="Outros" value="Outros" />
       </Picker>
 
-      <Text>Descrição da Atividade:</Text>
+      <Text>Descrição:</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
