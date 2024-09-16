@@ -25,7 +25,13 @@ export default function AdminOptionsScreen({ navigation }) {
         onPress={() => navigation.navigate('ActivitiesCreationScreen')}
         style={styles.button}
       />
-      
+
+      {/* Nova opção para ver gráficos */}
+      <Button
+        title="Ver Gráficos"
+        onPress={() => navigation.navigate('AdminGraphicScreen')}
+        style={styles.button}
+      />
     </View>
   );
 }
