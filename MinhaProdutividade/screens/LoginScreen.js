@@ -6,20 +6,18 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // Função de login
     console.log('Login efetuado:', email);
     navigation.navigate('Activity');
   };
 
   const handleAdminLogin = () => {
-    // Navegar para a tela de login do administrador
     navigation.navigate('AdminLogin');
   };
 
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/logo.png')}  // Caminho atualizado para o logo.png
+        source={require('../assets/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -46,10 +44,6 @@ export default function LoginScreen({ navigation }) {
 
       <Button title="Entrar" onPress={handleLogin} />
 
-      <Text style={styles.registerText}>
-        Não tem uma conta? <Text onPress={() => navigation.navigate('Register')} style={styles.registerLink}>Registre-se</Text>
-      </Text>
-
       <TouchableOpacity onPress={handleAdminLogin} style={styles.adminButton}>
         <Text style={styles.adminButtonText}>Administração</Text>
       </TouchableOpacity>
@@ -60,15 +54,15 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',  // Centraliza verticalmente
-    alignItems: 'center',  // Centraliza horizontalmente
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#fff',
     padding: 20,
   },
   logo: {
-    width: 200,  // Largura do logo
-    height: 200,  // Altura do logo
-    marginBottom: 20,  // Espaçamento entre o logo e o título
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
@@ -82,15 +76,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     marginBottom: 15,
     borderRadius: 5,
-  },
-  registerText: {
-    marginTop: 20,
-    fontSize: 14,
-    color: '#333',
-  },
-  registerLink: {
-    color: '#1e90ff',
-    fontWeight: 'bold',
   },
   adminButton: {
     marginTop: 30,
